@@ -7,7 +7,7 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, handlers.MainPage)
+	//mux.HandleFunc(`/`, handlers.MainPage)
 	mux.HandleFunc(`/update/{type}/{name}/{value}`, handlers.UpdateMetrics)
 
 	err := http.ListenAndServe(`:8080`, mux)
