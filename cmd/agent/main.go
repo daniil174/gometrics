@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-type Metric struct {
-	Name  string
-	Type  string
-	Value interface{}
-}
-
 type GaugeMetric struct {
 	Name string
 	//Type  string
