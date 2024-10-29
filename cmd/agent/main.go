@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -66,6 +67,12 @@ func SendMetrics(pollCount int64) {
 		//fmt.Printf("client: got response!\n")
 		fmt.Printf("client: status code: %d\n", res.StatusCode)
 
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+
+			}
+		}(res.Body)
 		//if res.StatusCode == http.StatusOK {
 		//	bodyBytes, err := io.ReadAll(res.Body)
 		//	if err != nil {
@@ -84,6 +91,12 @@ func SendMetrics(pollCount int64) {
 	}
 
 	fmt.Printf("client: status code: %d\n", res.StatusCode)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(res.Body)
 	//if res.StatusCode == http.StatusOK {
 	//	bodyBytes, err := io.ReadAll(res.Body)
 	//	if err != nil {
