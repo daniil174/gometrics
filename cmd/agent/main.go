@@ -71,6 +71,7 @@ func SendMetrics(pollCount int64) {
 			err := Body.Close()
 			if err != nil {
 				fmt.Printf("error: %s\n", err)
+				os.Exit(1)
 			}
 		}(res.Body)
 		//if res.StatusCode == http.StatusOK {
@@ -95,6 +96,7 @@ func SendMetrics(pollCount int64) {
 		err := Body.Close()
 		if err != nil {
 			fmt.Printf("error: %s\n", err)
+			os.Exit(1)
 		}
 	}(res.Body)
 	//if res.StatusCode == http.StatusOK {
