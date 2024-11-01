@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/daniil174/gometrics/internal/memstats"
 	"strconv"
 	"time"
+
+	"github.com/daniil174/gometrics/internal/memstats"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -38,7 +39,6 @@ var pollInterval = 2 * time.Second
 var reportInterval = 10 * time.Second
 
 func main() {
-	// countTime := 0
 	startTimePoll := time.Now()
 	startTimeReport := time.Now()
 
@@ -46,17 +46,13 @@ func main() {
 		time.Sleep(time.Second)
 		finishTimePoll := time.Now()
 		finishTimeReport := time.Now()
-		// countTime++
-		// fmt.Printf("Time: %d\n", countTime)
+
 		if finishTimePoll.Sub(startTimePoll) >= pollInterval {
 			memstats.CollectGaugeMetrics()
-			//pullCount++
-			// fmt.Printf("Pull Count: %d\n", countTime)
 			startTimePoll = time.Now()
 		}
 		if finishTimeReport.Sub(startTimeReport) >= reportInterval {
 			SendMetrics2()
-			// fmt.Printf("Send Report: %d\n", countTime)
 			startTimeReport = time.Now()
 		}
 	}

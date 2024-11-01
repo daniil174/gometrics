@@ -2,7 +2,7 @@ package storage
 
 import "errors"
 
-var MetricDidntExist = errors.New("Metric didn't exist")
+var ErrMetricDidntExist = errors.New("metric didn't exist")
 
 type MemStorage struct {
 	Gauge   map[string]float64
@@ -49,7 +49,7 @@ func NewMemStorage() *MemStorage {
 
 func (m *MemStorage) AddCounter(name string, value int64) error {
 	if _, ok := m.Counter[name]; !ok {
-		return MetricDidntExist
+		return ErrMetricDidntExist
 	}
 	m.Counter[name] += value
 	return nil
@@ -57,7 +57,7 @@ func (m *MemStorage) AddCounter(name string, value int64) error {
 
 func (m *MemStorage) RewriteGauge(name string, value float64) error {
 	if _, ok := m.Gauge[name]; !ok {
-		return MetricDidntExist
+		return ErrMetricDidntExist
 	}
 	m.Gauge[name] = value
 	return nil
@@ -65,14 +65,14 @@ func (m *MemStorage) RewriteGauge(name string, value float64) error {
 
 func (m *MemStorage) GetGauge(name string) (float64, error) {
 	if _, ok := m.Gauge[name]; !ok {
-		return 0, MetricDidntExist
+		return 0, ErrMetricDidntExist
 	}
 	return m.Gauge[name], nil
 }
 
 func (m *MemStorage) GetCounter(name string) (int64, error) {
 	if _, ok := m.Counter[name]; !ok {
-		return 0, MetricDidntExist
+		return 0, ErrMetricDidntExist
 	}
 	return m.Counter[name], nil
 }

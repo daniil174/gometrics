@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -14,7 +15,6 @@ import (
 var m = storage.NewMemStorage()
 
 func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
-
 	metricType := chi.URLParam(r, "type")
 	metricName := chi.URLParam(r, "name")
 
@@ -36,7 +36,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 
 			err = m.AddCounter(metricName, metricValue)
 			if err != nil {
-				if err == storage.MetricDidntExist {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
 				} else {
 					return
@@ -56,7 +56,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 
 			err = m.RewriteGauge(metricName, metricValue)
 			if err != nil {
-				if err == storage.MetricDidntExist {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
 				} else {
 					return
@@ -84,22 +84,20 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "type")
 	metricName := chi.URLParam(r, "name")
 
-	//var resp
-
 	switch metricType {
 	case "counter":
 		{
 			resp, err := m.GetCounter(metricName)
 			if err != nil {
-				if err == storage.MetricDidntExist {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
 				} else {
 					return
 				}
 			}
 
-			_, err2 := w.Write([]byte(fmt.Sprintf("%d", resp)))
-			if err2 != nil {
+			_, err = fmt.Fprintf(w, "%d", resp)
+			if err != nil {
 				return
 			}
 		}
@@ -107,15 +105,15 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 		{
 			resp, err := m.GetGauge(metricName)
 			if err != nil {
-				if err == storage.MetricDidntExist {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
 				} else {
 					return
 				}
 			}
 
-			_, err2 := w.Write([]byte(fmt.Sprintf("%f", resp)))
-			if err2 != nil {
+			_, err = fmt.Fprintf(w, "%f", resp)
+			if err != nil {
 				return
 			}
 		}
@@ -125,10 +123,8 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	w.Header().Set("content-type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func MainPage(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +135,7 @@ func MainPage(w http.ResponseWriter, r *http.Request) {
 		body += fmt.Sprintf("Metric name: %s = %d \n", n, v)
 	}
 
-	// sort Gauge metrics by name
+	// Sort Gauge metrics by name
 	keys := make([]string, 0, len(m.Gauge))
 	for k := range m.Gauge {
 		keys = append(keys, k)
@@ -154,5 +150,4 @@ func MainPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	// http.ServeFile(w, r, "./README.md")
 }
