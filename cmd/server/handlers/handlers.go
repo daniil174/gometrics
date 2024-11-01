@@ -112,7 +112,7 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			_, err = fmt.Fprintf(w, "%f", resp)
+			_, err = fmt.Fprintf(w, "%.3f", resp)
 			if err != nil {
 				return
 			}
