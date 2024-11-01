@@ -143,7 +143,7 @@ func MainPage(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		body += fmt.Sprintf("Metric name: %s = %f \n", k, m.Gauge[k])
+		body += fmt.Sprintf("Metric name: %s = %.3f \n", k, m.Gauge[k])
 	}
 
 	_, err := w.Write([]byte(body))
