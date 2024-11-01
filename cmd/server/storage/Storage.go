@@ -48,17 +48,17 @@ func NewMemStorage() *MemStorage {
 }
 
 func (m *MemStorage) AddCounter(name string, value int64) error {
-	if _, ok := m.Counter[name]; !ok {
-		return ErrMetricDidntExist
-	}
+	// if _, ok := m.Counter[name]; !ok {
+	//	return ErrMetricDidntExist
+	// }
 	m.Counter[name] += value
 	return nil
 }
 
 func (m *MemStorage) RewriteGauge(name string, value float64) error {
-	if _, ok := m.Gauge[name]; !ok {
-		return ErrMetricDidntExist
-	}
+	// if _, ok := m.Gauge[name]; !ok {
+	//	return ErrMetricDidntExist
+	// }
 	m.Gauge[name] = value
 	return nil
 }
