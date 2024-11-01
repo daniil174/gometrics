@@ -2,23 +2,22 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/daniil174/gometrics/cmd/server/storage"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/daniil174/gometrics/cmd/server/storage"
+	"github.com/go-chi/chi/v5"
 )
 
 var m = storage.NewMemStorage()
 
 func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
+	metricType := chi.URLParam(r, "type")
+	metricName := chi.URLParam(r, "name")
 
-	metricType := r.PathValue("type")
-	metricName := r.PathValue("name")
 	body := fmt.Sprintf("metricType : %s\n metricName : %s\n ", metricType, metricName)
 
 	if metricName == "" {
@@ -29,41 +28,42 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 	switch metricType {
 	case "counter":
 		{
-
-			metricValue, err := strconv.ParseInt(r.PathValue("value"), 10, 64)
+			metricValue, err := strconv.ParseInt(chi.URLParam(r, "value"), 10, 64)
 			if err != nil {
 				http.Error(w, "Metric counter must have INT value", http.StatusBadRequest)
 				return
 			}
-			if _, ok := m.Counter[metricName]; ok {
-				err := m.AddCounter(metricName, metricValue)
-				if err != nil {
+
+			err = m.AddCounter(metricName, metricValue)
+			if err != nil {
+				if err == storage.MetricDidntExist {
+					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
+				} else {
 					return
 				}
-				//m.counter[metricName] += metricValue
-			} else {
-				m.Counter[metricName] = metricValue
 			}
-			body += fmt.Sprintf("metricValue : %d\n", m.Counter[metricName])
+
+			res, _ := m.GetCounter(metricName)
+			body += fmt.Sprintf("metricValue : %d\n", res)
 		}
 	case "gauge":
 		{
-			metricValue, err := strconv.ParseFloat(strings.TrimSpace(r.PathValue("value")), 64)
+			metricValue, err := strconv.ParseFloat(strings.TrimSpace(chi.URLParam(r, "value")), 64)
 			if err != nil {
-				// ... handle error
 				http.Error(w, "Metric gauge must have float64 value", http.StatusBadRequest)
 				return
 			}
-			if _, ok := m.Gauge[metricName]; ok {
-				err := m.RewriteGauge(metricName, metricValue)
-				if err != nil {
+
+			err = m.RewriteGauge(metricName, metricValue)
+			if err != nil {
+				if err == storage.MetricDidntExist {
+					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
+				} else {
 					return
 				}
-				//m.gauge[metricName] = metricValue
-			} else {
-				m.Gauge[metricName] = metricValue
 			}
-			body += fmt.Sprintf("metricValue : %f\n", m.Gauge[metricName])
+			res, _ := m.GetGauge(metricName)
+			body += fmt.Sprintf("metricValue : %f\n", res)
 		}
 	default:
 		{
@@ -80,6 +80,79 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetMetric(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, "type")
+	metricName := chi.URLParam(r, "name")
+
+	//var resp
+
+	switch metricType {
+	case "counter":
+		{
+			resp, err := m.GetCounter(metricName)
+			if err != nil {
+				if err == storage.MetricDidntExist {
+					http.Error(w, "Metric did't exists", http.StatusNotFound)
+				} else {
+					return
+				}
+			}
+
+			_, err2 := w.Write([]byte(fmt.Sprintf("%d", resp)))
+			if err2 != nil {
+				return
+			}
+		}
+	case "gauge":
+		{
+			resp, err := m.GetGauge(metricName)
+			if err != nil {
+				if err == storage.MetricDidntExist {
+					http.Error(w, "Metric did't exists", http.StatusNotFound)
+				} else {
+					return
+				}
+			}
+
+			_, err2 := w.Write([]byte(fmt.Sprintf("%f", resp)))
+			if err2 != nil {
+				return
+			}
+		}
+	default:
+		{
+			http.Error(w, "Metric TYPE must be 'counter' or 'gauge'", http.StatusBadRequest)
+			return
+		}
+	}
+
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func MainPage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./README.md")
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	var body = ""
+	for n, v := range m.Counter {
+		body += fmt.Sprintf("Metric name: %s = %d \n", n, v)
+	}
+
+	// sort Gauge metrics by name
+	keys := make([]string, 0, len(m.Gauge))
+	for k := range m.Gauge {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		body += fmt.Sprintf("Metric name: %s = %f \n", k, m.Gauge[k])
+	}
+
+	_, err := w.Write([]byte(body))
+	if err != nil {
+		return
+	}
+	// http.ServeFile(w, r, "./README.md")
 }
