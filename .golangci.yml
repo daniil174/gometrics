@@ -502,7 +502,6 @@ linters:
     - govet
     - grouper
     - ineffassign
-    - intrange
     - lll
     - loggercheck
     - makezero
