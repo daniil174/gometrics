@@ -3,13 +3,11 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"github.com/daniil174/gometrics/cmd/server/storage"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
-
-	"github.com/daniil174/gometrics/cmd/server/storage"
-	"github.com/go-chi/chi/v5"
 )
 
 var m = storage.NewMemStorage()
@@ -48,7 +46,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 		}
 	case "gauge":
 		{
-			metricValue, err := strconv.ParseFloat(strings.TrimSpace(chi.URLParam(r, "value")), 64)
+			metricValue, err := strconv.ParseFloat(chi.URLParam(r, "value"), 64)
 			if err != nil {
 				http.Error(w, "Metric gauge must have float64 value", http.StatusBadRequest)
 				return
@@ -112,7 +110,7 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			_, err = fmt.Fprintf(w, "%.3f", resp)
+			_, err = fmt.Fprintf(w, "%s", strconv.FormatFloat(resp, 'f', -1, 64))
 			if err != nil {
 				return
 			}
@@ -143,7 +141,7 @@ func MainPage(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		body += fmt.Sprintf("Metric name: %s = %.3f \n", k, m.Gauge[k])
+		body += fmt.Sprintf("Metric name: %s = %s \n", k, strconv.FormatFloat(m.Gauge[k], 'f', -1, 64))
 	}
 
 	_, err := w.Write([]byte(body))
