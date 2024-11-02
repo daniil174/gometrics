@@ -79,8 +79,8 @@ func ConfigFromEnv() error {
 		return errConf
 	}
 	fmt.Printf("ADDRESS=%s=", cfg.Addr)
-	fmt.Printf("POLL_INTERVAL=%s=", cfg.PollInterval)
-	fmt.Printf("REPORT_INTERVAL=%s=", cfg.ReportInterval)
+	fmt.Printf("POLL_INTERVAL=%d=", cfg.PollInterval)
+	fmt.Printf("REPORT_INTERVAL=%d=", cfg.ReportInterval)
 	serverAddr = cfg.Addr
 	pollInterval = cfg.PollInterval
 	reportInterval = cfg.ReportInterval
