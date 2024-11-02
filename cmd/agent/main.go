@@ -23,9 +23,10 @@ func SendMetrics2() {
 	client := resty.New()
 	for _, v := range memstats.CollectGaugeMetrics() {
 		_, err := client.R().SetPathParams(map[string]string{
-			"Name":  v.Name,
-			"Value": fmt.Sprintf("%f", v.Value),
-		}).Post("http://localhost:8080/update/gauge/{Name}/{Value}")
+			"serverAddressAndPort": serverAddr,
+			"Name":                 v.Name,
+			"Value":                fmt.Sprintf("%f", v.Value),
+		}).Post("http://{serverAddressAndPort}/update/gauge/{Name}/{Value}")
 		if err != nil {
 			panic(err)
 		}
@@ -33,9 +34,10 @@ func SendMetrics2() {
 	}
 
 	_, err := client.R().SetPathParams(map[string]string{
-		"Name":  "PollCount",
-		"Value": strconv.FormatInt(memstats.PullCount+1, 10),
-	}).Post("http://localhost:8080/update/counter/{Name}/{Value}")
+		"serverAddressAndPort": serverAddr,
+		"Name":                 "PollCount",
+		"Value":                strconv.FormatInt(memstats.PullCount+1, 10),
+	}).Post("http://{serverAddressAndPort}/update/counter/{Name}/{Value}")
 
 	if err != nil {
 		panic(err)
