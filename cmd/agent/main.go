@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/caarlos0/env/v11"
 	"strconv"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 )
 
 const NanoSecToSec = 1000 * 1000 * 1000
-const defaultPollInterval = 2
-const defaultReportInterval = 10
+const defaultPollInterval = 1
+const defaultReportInterval = 3
 
 var pollInterval int
 var reportInterval int
@@ -66,11 +67,47 @@ func CronRequest(pi time.Duration, ri time.Duration) {
 	}
 }
 
-func main() {
-	flag.StringVar(&serverAddr, "a", "localhost:8080", "server address and port, example 127.0.0.1:8080")
-	flag.IntVar(&pollInterval, "p", defaultPollInterval, "poll interval, example 2 sec")
-	flag.IntVar(&reportInterval, "r", defaultReportInterval, "report interval, example 10 sec")
+type Config struct {
+	Addr           string `env:"ADDRESS"`
+	PollInterval   int    `env:"POLL_INTERVAL"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
+}
+
+func ConfigFromEnv() error {
+	cfg, errConf := env.ParseAs[Config]()
+	if errConf != nil {
+		return errConf
+	}
+	fmt.Printf("ADDRESS=%s=", cfg.Addr)
+	fmt.Printf("POLL_INTERVAL=%s=", cfg.PollInterval)
+	fmt.Printf("REPORT_INTERVAL=%s=", cfg.ReportInterval)
+	serverAddr = cfg.Addr
+	pollInterval = cfg.PollInterval
+	reportInterval = cfg.ReportInterval
+
+	if serverAddr == "" {
+		flag.StringVar(&serverAddr, "a", "localhost:8080", "server address and port, example 127.0.0.1:8080")
+	}
+
+	if pollInterval == 0 {
+		flag.IntVar(&pollInterval, "p", defaultPollInterval, "poll interval, example 2 sec")
+	}
+
+	if reportInterval == 0 {
+		flag.IntVar(&reportInterval, "r", defaultReportInterval, "report interval, example 10 sec")
+	}
+
 	flag.Parse()
+	fmt.Printf("serverAddr=%s=", serverAddr)
+	fmt.Printf("PollInterval=%d=", pollInterval)
+	fmt.Printf("ReportInterval=%d=", reportInterval)
+	return nil
+}
+
+func main() {
+	_ = ConfigFromEnv()
+	//flag.StringVar(&serverAddr, "a", "localhost:8080", "server address and port, example 127.0.0.1:8080")
+	//flag.Parse()
 
 	CronRequest(time.Duration(pollInterval*NanoSecToSec), time.Duration(reportInterval*NanoSecToSec))
 }

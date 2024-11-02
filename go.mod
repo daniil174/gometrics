@@ -7,4 +7,7 @@ require (
 	github.com/go-resty/resty/v2 v2.15.3
 )
 
-require golang.org/x/net v0.27.0 // indirect
+require (
+	github.com/caarlos0/env/v11 v11.2.2 // indirect
+	golang.org/x/net v0.27.0 // indirect
+)
