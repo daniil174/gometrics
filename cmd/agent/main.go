@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 	"time"
@@ -9,6 +10,14 @@ import (
 
 	"github.com/go-resty/resty/v2"
 )
+
+const NanoSecToSec = 1000 * 1000 * 1000
+const defaultPollInterval = 2
+const defaultReportInterval = 10
+
+var pollInterval int
+var reportInterval int
+var serverAddr string
 
 func SendMetrics2() {
 	client := resty.New()
@@ -35,10 +44,7 @@ func SendMetrics2() {
 	fmt.Printf("counter ok %d", memstats.PullCount+1)
 }
 
-var pollInterval = 2 * time.Second
-var reportInterval = 10 * time.Second
-
-func main() {
+func CronRequest(pi time.Duration, ri time.Duration) {
 	startTimePoll := time.Now()
 	startTimeReport := time.Now()
 
@@ -47,13 +53,22 @@ func main() {
 		finishTimePoll := time.Now()
 		finishTimeReport := time.Now()
 
-		if finishTimePoll.Sub(startTimePoll) >= pollInterval {
+		if finishTimePoll.Sub(startTimePoll) >= pi {
 			memstats.CollectGaugeMetrics()
 			startTimePoll = time.Now()
 		}
-		if finishTimeReport.Sub(startTimeReport) >= reportInterval {
+		if finishTimeReport.Sub(startTimeReport) >= ri {
 			SendMetrics2()
 			startTimeReport = time.Now()
 		}
 	}
+}
+
+func main() {
+	flag.StringVar(&serverAddr, "a", "localhost:8080", "server address and port, example 127.0.0.1:8080")
+	flag.IntVar(&pollInterval, "p", defaultPollInterval, "poll interval, example 2 sec")
+	flag.IntVar(&reportInterval, "r", defaultReportInterval, "report interval, example 10 sec")
+	flag.Parse()
+
+	CronRequest(time.Duration(pollInterval*NanoSecToSec), time.Duration(reportInterval*NanoSecToSec))
 }

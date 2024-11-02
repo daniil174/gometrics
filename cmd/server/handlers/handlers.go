@@ -3,11 +3,12 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"github.com/daniil174/gometrics/cmd/server/storage"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/daniil174/gometrics/cmd/server/storage"
+	"github.com/go-chi/chi/v5"
 )
 
 var m = storage.NewMemStorage()
