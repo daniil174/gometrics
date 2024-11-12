@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/daniil174/gometrics/cmd/server/storage"
 	"github.com/go-chi/chi/v5"
@@ -150,4 +153,15 @@ func MainPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+}
+
+func Logs(w http.ResponseWriter, r *http.Request) {
+	// даем загружать только файлы из папки "logs"
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "logs"))
+
+	rctx := chi.RouteContext(r.Context())
+	pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+	fs := http.StripPrefix(pathPrefix, http.FileServer(filesDir))
+	fs.ServeHTTP(w, r)
 }

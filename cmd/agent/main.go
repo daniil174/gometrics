@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/caarlos0/env/v11"
 	"strconv"
 	"time"
+
+	"github.com/caarlos0/env/v11"
 
 	"github.com/daniil174/gometrics/internal/memstats"
 
@@ -20,15 +21,27 @@ var pollInterval int
 var reportInterval int
 var serverAddr string
 
+const (
+	RetryCount              = 5
+	RetryMinWaitTimeSeconds = 5
+	RetryMaxWaitTimeSeconds = 15
+)
+
 func SendMetrics2() {
 	client := resty.New()
+
 	for _, v := range memstats.CollectGaugeMetrics() {
-		_, err := client.R().SetPathParams(map[string]string{
+		_, err := client.
+			SetRetryCount(RetryCount).
+			SetRetryWaitTime(RetryMinWaitTimeSeconds * time.Second).
+			SetRetryMaxWaitTime(RetryMaxWaitTimeSeconds * time.Second).
+			R().SetPathParams(map[string]string{
 			"serverAddressAndPort": serverAddr,
 			"Name":                 v.Name,
 			"Value":                fmt.Sprintf("%f", v.Value),
 		}).Post("http://{serverAddressAndPort}/update/gauge/{Name}/{Value}")
 		if err != nil {
+			fmt.Println("Error occurred while making request:", err)
 			panic(err)
 		}
 		println("gauge ok")
@@ -100,14 +113,12 @@ func ConfigFromEnv() error {
 	flag.Parse()
 	fmt.Printf("serverAddr=%s=", serverAddr)
 	fmt.Printf("PollInterval=%d=", pollInterval)
-	fmt.Printf("ReportInterval=%d=", reportInterval)
+	fmt.Printf("ReportInterval=%d= \n", reportInterval)
 	return nil
 }
 
 func main() {
 	_ = ConfigFromEnv()
-	//flag.StringVar(&serverAddr, "a", "localhost:8080", "server address and port, example 127.0.0.1:8080")
-	//flag.Parse()
 
 	CronRequest(time.Duration(pollInterval*NanoSecToSec), time.Duration(reportInterval*NanoSecToSec))
 }
