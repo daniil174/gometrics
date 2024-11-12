@@ -151,7 +151,7 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-/*func Logs(w http.ResponseWriter, r *http.Request) {
+/* func Logs(w http.ResponseWriter, r *http.Request) {
 	// даем загружать только файлы из папки "logs"
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "logs"))
@@ -160,4 +160,4 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
 	fs := http.StripPrefix(pathPrefix, http.FileServer(filesDir))
 	fs.ServeHTTP(w, r)
-}*/
+} */
