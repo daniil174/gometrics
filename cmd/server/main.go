@@ -139,7 +139,7 @@ func main() {
 	r.Use(WithLogging)
 
 	// Добавляем просмотр логов по запросу "http://serverAddr/log"
-	r.Get("/*", handlers.Logs)
+	// r.Get("/*", handlers.Logs)
 
 	r.Get("/", handlers.MainPage)
 

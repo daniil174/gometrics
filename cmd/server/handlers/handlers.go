@@ -3,15 +3,11 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
-
 	"github.com/daniil174/gometrics/cmd/server/storage"
 	"github.com/go-chi/chi/v5"
+	"net/http"
+	"sort"
+	"strconv"
 )
 
 var m = storage.NewMemStorage()
@@ -130,7 +126,7 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func MainPage(w http.ResponseWriter, r *http.Request) {
+func MainPage(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("content-type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	var body = ""
@@ -155,7 +151,7 @@ func MainPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Logs(w http.ResponseWriter, r *http.Request) {
+/*func Logs(w http.ResponseWriter, r *http.Request) {
 	// даем загружать только файлы из папки "logs"
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "logs"))
@@ -164,4 +160,4 @@ func Logs(w http.ResponseWriter, r *http.Request) {
 	pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
 	fs := http.StripPrefix(pathPrefix, http.FileServer(filesDir))
 	fs.ServeHTTP(w, r)
-}
+}*/
