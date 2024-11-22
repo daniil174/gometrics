@@ -228,53 +228,53 @@ func GetMetric2(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//func GetMetric(w http.ResponseWriter, r *http.Request) {
-//	metricType := chi.URLParam(r, "type")
-//	metricName := chi.URLParam(r, "name")
-//
-//	switch metricType {
-//	case "counter":
-//		{
-//			resp, err := m.GetCounter(metricName)
-//			if err != nil {
-//				if errors.Is(err, storage.ErrMetricDidntExist) {
-//					http.Error(w, "Metric did't exists", http.StatusNotFound)
-//				} else {
-//					return
-//				}
-//			}
-//
-//			_, err = fmt.Fprintf(w, "%d", resp)
-//			if err != nil {
-//				return
-//			}
-//		}
-//	case "gauge":
-//		{
-//			resp, err := m.GetGauge(metricName)
-//			if err != nil {
-//				if errors.Is(err, storage.ErrMetricDidntExist) {
-//					http.Error(w, "Metric did't exists", http.StatusNotFound)
-//				} else {
-//					return
-//				}
-//			}
-//
-//			_, err = fmt.Fprintf(w, "%s", strconv.FormatFloat(resp, 'f', -1, 64))
-//			if err != nil {
-//				return
-//			}
-//		}
-//	default:
-//		{
-//			http.Error(w, "Metric TYPE must be 'counter' or 'gauge'", http.StatusBadRequest)
-//			return
-//		}
-//	}
-//
-//	w.Header().Set("content-type", "text/plain")
-//	w.WriteHeader(http.StatusOK)
-//}
+func GetMetric(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, "type")
+	metricName := chi.URLParam(r, "name")
+
+	switch metricType {
+	case "counter":
+		{
+			resp, err := m.GetCounter(metricName)
+			if err != nil {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
+					http.Error(w, "Metric did't exists", http.StatusNotFound)
+				} else {
+					return
+				}
+			}
+
+			_, err = fmt.Fprintf(w, "%d", resp)
+			if err != nil {
+				return
+			}
+		}
+	case "gauge":
+		{
+			resp, err := m.GetGauge(metricName)
+			if err != nil {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
+					http.Error(w, "Metric did't exists", http.StatusNotFound)
+				} else {
+					return
+				}
+			}
+
+			_, err = fmt.Fprintf(w, "%s", strconv.FormatFloat(resp, 'f', -1, 64))
+			if err != nil {
+				return
+			}
+		}
+	default:
+		{
+			http.Error(w, "Metric TYPE must be 'counter' or 'gauge'", http.StatusBadRequest)
+			return
+		}
+	}
+
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+}
 
 func MainPage(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("content-type", "text/plain")

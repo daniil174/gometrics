@@ -145,10 +145,10 @@ func main() {
 
 	r.Get("/", handlers.MainPage)
 
-	//r.Post("/update/{type}/{name}/{value}", handlers.UpdateMetrics)
+	r.Post("/update/{type}/{name}/{value}", handlers.UpdateMetrics)
 	r.Post("/update/", handlers.UpdateMetrics2)
 	r.Post("/value/", handlers.GetMetric2)
-	//r.Get("/value/{type}/{name}", handlers.GetMetric)
+	r.Get("/value/{type}/{name}", handlers.GetMetric)
 
 	err2 := http.ListenAndServe(serverAddr, r)
 	if err2 != nil {
