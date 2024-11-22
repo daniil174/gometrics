@@ -1,12 +1,18 @@
 package storage
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+)
 
 var ErrMetricDidntExist = errors.New("metric didn't exist")
 
 type MemStorage struct {
-	Gauge   map[string]float64
-	Counter map[string]int64
+	FileStorage *os.File           `json:"-"`
+	Gauge       map[string]float64 `json:"gauge"`
+	Counter     map[string]int64   `json:"counter"`
 }
 
 type Metrics struct {
@@ -85,3 +91,89 @@ func (m *MemStorage) GetCounter(name string) (int64, error) {
 	}
 	return m.Counter[name], nil
 }
+
+//===============================
+//===============================
+
+type Storage struct {
+	FileStorage *os.File
+	MemStorage  MemStorage
+}
+
+func New() *Storage {
+	return &Storage{
+		MemStorage: *NewMemStorage(),
+	}
+}
+
+// OpenFile открытие файла для хранения данных
+func (m *MemStorage) ReadFile(filename string) error {
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+
+	//err = json.NewEncoder(file).Encode(s.MemStorage)
+
+	err = json.NewDecoder(file).Decode(m)
+	if err != nil {
+		file.Close()
+	}
+
+	m.FileStorage = file
+	//defer file.Close()
+	return nil
+}
+
+func (m *MemStorage) SaveMetricsToFile(filename string) error {
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	//fmt.Printf("Metrics: %+v", m)
+	fmt.Sprintf("Metrics: %+v", m)
+	//servlogger.Sugar.Errorf("Metrics: %+v", m)
+
+	err = json.NewEncoder(file).Encode(m)
+	if err != nil {
+		file.Close()
+	}
+
+	m.FileStorage = file
+	//defer file.Close()
+	return nil
+}
+
+func (m *MemStorage) CloseFile() error {
+	return m.FileStorage.Close()
+}
+
+//func StartFileStorageLogic(config *flags.Config, s *Storage, servlogger *servlogger.Logger) {
+//	if config.FileStoragePath != "" {
+//		err := s.OpenFile(config.FileStoragePath)
+//		if err != nil {
+//			servlogger.Error("Failed to open file: %v", zap.Error(err))
+//		}
+//	} else {
+//		servlogger.Info("File storage is not specified")
+//		return
+//	}
+//
+//	if config.Restore {
+//		err := s.LoadMemStorageFromFile()
+//		if err != nil {
+//			servlogger.Error("Failed to restore data from file: %v", zap.Error(err))
+//		}
+//	}
+//
+//	go func() {
+//		for {
+//			interval := time.Duration(config.StoreInterval) * time.Second
+//			// if interval == 0 {
+//			// 	interval = 100 * time.Microsecond // Установите разумное значение по умолчанию
+//			// }
+//			time.Sleep(interval)
+//			s.SaveMemStorageToFile()
+//		}
+//	}()
+//}

@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-var m = storage.NewMemStorage()
+var MemStrg = storage.NewMemStorage()
 
 func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 	var metric storage.Metrics
@@ -27,7 +27,7 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 	switch metric.MType {
 	case "gauge":
 		{
-			err := m.RewriteGauge(metric.ID, *metric.Value)
+			err := MemStrg.RewriteGauge(metric.ID, *metric.Value)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
@@ -35,7 +35,7 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
-			*metric.Value, _ = m.GetGauge(metric.ID)
+			*metric.Value, _ = MemStrg.GetGauge(metric.ID)
 			err = json.NewEncoder(w).Encode(metric)
 			if err != nil {
 				return
@@ -44,7 +44,7 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 		}
 	case "counter":
 		{
-			err := m.AddCounter(metric.ID, *metric.Delta)
+			err := MemStrg.AddCounter(metric.ID, *metric.Delta)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
@@ -53,7 +53,7 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			*metric.Delta, _ = m.GetCounter(metric.ID)
+			*metric.Delta, _ = MemStrg.GetCounter(metric.ID)
 			err = json.NewEncoder(w).Encode(metric)
 			if err != nil {
 				return
@@ -91,7 +91,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			err = m.AddCounter(metricName, metricValue)
+			err = MemStrg.AddCounter(metricName, metricValue)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
@@ -100,7 +100,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			res, _ := m.GetCounter(metricName)
+			res, _ := MemStrg.GetCounter(metricName)
 			body += fmt.Sprintf("metricValue : %d\n", res)
 		}
 	case "gauge":
@@ -111,7 +111,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			err = m.RewriteGauge(metricName, metricValue)
+			err = MemStrg.RewriteGauge(metricName, metricValue)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
@@ -119,7 +119,7 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
-			res, _ := m.GetGauge(metricName)
+			res, _ := MemStrg.GetGauge(metricName)
 			body += fmt.Sprintf("metricValue : %f\n", res)
 		}
 	default:
@@ -157,7 +157,7 @@ func GetMetric2(w http.ResponseWriter, r *http.Request) {
 	switch metric.MType {
 	case "gauge":
 		{
-			resp, err := m.GetGauge(metric.ID)
+			resp, err := MemStrg.GetGauge(metric.ID)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
@@ -179,7 +179,7 @@ func GetMetric2(w http.ResponseWriter, r *http.Request) {
 		}
 	case "counter":
 		{
-			resp, err := m.GetCounter(metric.ID)
+			resp, err := MemStrg.GetCounter(metric.ID)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
@@ -218,7 +218,7 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 	switch metricType {
 	case "counter":
 		{
-			resp, err := m.GetCounter(metricName)
+			resp, err := MemStrg.GetCounter(metricName)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
@@ -234,7 +234,7 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 		}
 	case "gauge":
 		{
-			resp, err := m.GetGauge(metricName)
+			resp, err := MemStrg.GetGauge(metricName)
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
@@ -263,19 +263,19 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	var body = ""
-	for n, v := range m.Counter {
+	for n, v := range MemStrg.Counter {
 		body += fmt.Sprintf("<br> Metric name: %s = %d \n", n, v)
 	}
 
 	// Sort Gauge metrics by name
-	keys := make([]string, 0, len(m.Gauge))
-	for k := range m.Gauge {
+	keys := make([]string, 0, len(MemStrg.Gauge))
+	for k := range MemStrg.Gauge {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		body += fmt.Sprintf("<br> Metric name: %s = %s \n ", k, strconv.FormatFloat(m.Gauge[k], 'f', -1, 64))
+		body += fmt.Sprintf("<br> Metric name: %s = %s \n ", k, strconv.FormatFloat(MemStrg.Gauge[k], 'f', -1, 64))
 	}
 
 	_, err := w.Write([]byte(body))
