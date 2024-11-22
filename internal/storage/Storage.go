@@ -100,11 +100,11 @@ type Storage struct {
 	MemStorage  MemStorage
 }
 
-func New() *Storage {
-	return &Storage{
-		MemStorage: *NewMemStorage(),
-	}
-}
+//func New() *Storage {
+//	return &Storage{
+//		MemStorage: *NewMemStorage(),
+//	}
+//}
 
 // OpenFile открытие файла для хранения данных
 func (m *MemStorage) ReadFile(filename string) error {
@@ -131,7 +131,7 @@ func (m *MemStorage) SaveMetricsToFile(filename string) error {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
 	//fmt.Printf("Metrics: %+v", m)
-	fmt.Sprintf("Metrics: %+v", m)
+	//fmt.Sprintf("Metrics: %+v", m)
 	//servlogger.Sugar.Errorf("Metrics: %+v", m)
 
 	err = json.NewEncoder(file).Encode(m)
