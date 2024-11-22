@@ -1,17 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"time"
 
-	"github.com/daniil174/gometrics/internal/storage"
-
 	"github.com/caarlos0/env/v11"
-
 	"github.com/daniil174/gometrics/internal/memstats"
-
+	"github.com/daniil174/gometrics/internal/storage"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -29,6 +29,21 @@ const (
 	RetryMaxWaitTimeSeconds = 15
 )
 
+func CompressData(data []byte) []byte {
+	// Create a buffer to hold the compressed data.
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
+	_, err := gzipWriter.Write(data)
+	if err != nil {
+		log.Fatalf("Failed to write to gzip writer: %v", err)
+	}
+	err = gzipWriter.Close()
+	if err != nil {
+		log.Fatalf("Failed to close gzip writer: %v", err)
+	}
+	return buf.Bytes()
+}
+
 func SendMetrics2() {
 	client := resty.New()
 
@@ -38,10 +53,6 @@ func SendMetrics2() {
 			MType: "gauge",
 			Value: &v.Value,
 		}
-
-		//var out io.Writer
-		//enc := json.NewEncoder(out)
-		//enc.SetIndent("", "    ")
 
 		req, rErr := json.Marshal(m)
 		if rErr != nil {
@@ -55,7 +66,9 @@ func SendMetrics2() {
 			SetRetryMaxWaitTime(RetryMaxWaitTimeSeconds*time.Second).
 			R().
 			SetHeader("Content-Type", "application/json").
-			SetBody(req).
+			SetHeader("Accept-Encoding", "gzip").
+			SetHeader("Content-Encoding", "gzip").
+			SetBody(CompressData(req)).
 			SetPathParams(map[string]string{
 				"serverAddressAndPort": serverAddr,
 			}).Post("http://{serverAddressAndPort}/update/")
@@ -85,11 +98,11 @@ func SendMetrics2() {
 		SetRetryMaxWaitTime(RetryMaxWaitTimeSeconds*time.Second).
 		R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(req).
+		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(CompressData(req)).
 		SetPathParams(map[string]string{
 			"serverAddressAndPort": serverAddr,
-			//"Name":                 "PollCount",
-			//"Value":                strconv.FormatInt(memstats.PullCount+1, 10),
 		}).Post("http://{serverAddressAndPort}/update/")
 
 	if err != nil {

@@ -15,11 +15,6 @@ import (
 var m = storage.NewMemStorage()
 
 func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Wrong content type ", http.StatusInternalServerError)
-		return
-	}
-
 	var metric storage.Metrics
 	w.Header().Set("content-type", "application/json")
 
@@ -28,8 +23,6 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Post request must have body", http.StatusInternalServerError)
 		return
 	}
-
-	//body := fmt.Sprintf("metricType : %s\n metricName : %s\n ", metric.MType, metric.ID)
 
 	switch metric.MType {
 	case "gauge":
@@ -43,7 +36,6 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			*metric.Value, _ = m.GetGauge(metric.ID)
-			//body += fmt.Sprintf("metricValue : %f\n", res)
 			err = json.NewEncoder(w).Encode(metric)
 			if err != nil {
 				return
@@ -62,7 +54,6 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 			}
 
 			*metric.Delta, _ = m.GetCounter(metric.ID)
-			//body += fmt.Sprintf("metricValue : %d\n", res)
 			err = json.NewEncoder(w).Encode(metric)
 			if err != nil {
 				return
@@ -76,13 +67,7 @@ func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// Content-Type: application/json
-
 	w.WriteHeader(http.StatusOK)
-	//_, err := w.Write([]byte(body))
-	//if err != nil {
-	//	return
-	//}
 }
 
 func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
@@ -154,10 +139,10 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 
 func GetMetric2(w http.ResponseWriter, r *http.Request) {
 
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Wrong content type ", http.StatusInternalServerError)
-		return
-	}
+	//if r.Header.Get("Content-Type") != "application/json" {
+	//	http.Error(w, "Wrong content type ", http.StatusInternalServerError)
+	//	return
+	//}
 
 	var metric storage.Metrics
 
@@ -221,8 +206,6 @@ func GetMetric2(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	// Content-Type: application/json
 
 	w.WriteHeader(http.StatusOK)
 
