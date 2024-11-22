@@ -15,6 +15,11 @@ import (
 var m = storage.NewMemStorage()
 
 func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Wrong content type ", http.StatusInternalServerError)
+		return
+	}
+
 	var metric storage.Metrics
 
 	jsDec := json.NewDecoder(r.Body)
@@ -138,6 +143,12 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMetric2(w http.ResponseWriter, r *http.Request) {
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Wrong content type ", http.StatusInternalServerError)
+		return
+	}
+
 	var metric storage.Metrics
 
 	jsDec := json.NewDecoder(r.Body)
