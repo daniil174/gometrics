@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -48,7 +47,7 @@ func main() {
 			if err != nil {
 				servlogger.Sugar.Fatalw(err.Error(), "event", "on save metrics in file")
 			}
-			log.Printf("event", "save metrics in file", interval)
+			//log.Printf("event", "save metrics in file", interval)
 		}
 	}()
 
@@ -69,7 +68,7 @@ func main() {
 
 	err2 := http.ListenAndServe(tmpCfg.ServerAddress, r)
 	if err2 != nil {
-		panic(err2)
+		//panic(err2)
 		logger.Fatalw(err2.Error(), "event", "on start server")
 	}
 
