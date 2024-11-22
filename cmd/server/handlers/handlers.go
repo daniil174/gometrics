@@ -260,11 +260,11 @@ func GetMetric(w http.ResponseWriter, r *http.Request) {
 }
 
 func MainPage(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("content-type", "text/plain")
+	w.Header().Set("content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	var body = ""
 	for n, v := range m.Counter {
-		body += fmt.Sprintf("Metric name: %s = %d \n", n, v)
+		body += fmt.Sprintf("<br> Metric name: %s = %d \n", n, v)
 	}
 
 	// Sort Gauge metrics by name
@@ -275,7 +275,7 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		body += fmt.Sprintf("Metric name: %s = %s \n", k, strconv.FormatFloat(m.Gauge[k], 'f', -1, 64))
+		body += fmt.Sprintf("<br> Metric name: %s = %s \n ", k, strconv.FormatFloat(m.Gauge[k], 'f', -1, 64))
 	}
 
 	_, err := w.Write([]byte(body))
