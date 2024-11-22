@@ -88,6 +88,7 @@ type (
 	}
 )
 
+// Write для логирования размера ответа
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	// Записываем ответ, используя оригинальный http.ResponseWriter
 	size, err := r.ResponseWriter.Write(b)
@@ -95,6 +96,7 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	return size, err
 }
 
+// WriteHeader Для логирования кода статуса
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	// Записываем код статуса, используя оригинальный http.ResponseWriter
 	r.ResponseWriter.WriteHeader(statusCode)
@@ -144,6 +146,8 @@ func main() {
 	r.Get("/", handlers.MainPage)
 
 	r.Post("/update/{type}/{name}/{value}", handlers.UpdateMetrics)
+	r.Post("/update/", handlers.UpdateMetrics2)
+	r.Post("/value/", handlers.GetMetric2)
 	r.Get("/value/{type}/{name}", handlers.GetMetric)
 
 	err2 := http.ListenAndServe(serverAddr, r)

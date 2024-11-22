@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
-	"strconv"
 	"time"
+
+	"github.com/daniil174/gometrics/internal/storage"
 
 	"github.com/caarlos0/env/v11"
 
@@ -31,15 +33,32 @@ func SendMetrics2() {
 	client := resty.New()
 
 	for _, v := range memstats.CollectGaugeMetrics() {
+		m := storage.Metrics{
+			ID:    v.Name,
+			MType: "gauge",
+			Value: &v.Value,
+		}
+
+		//var out io.Writer
+		//enc := json.NewEncoder(out)
+		//enc.SetIndent("", "    ")
+
+		req, rErr := json.Marshal(m)
+		if rErr != nil {
+			fmt.Println("Error occurred while making request:", rErr)
+			panic(rErr)
+		}
+
 		_, err := client.
 			SetRetryCount(RetryCount).
-			SetRetryWaitTime(RetryMinWaitTimeSeconds * time.Second).
-			SetRetryMaxWaitTime(RetryMaxWaitTimeSeconds * time.Second).
-			R().SetPathParams(map[string]string{
-			"serverAddressAndPort": serverAddr,
-			"Name":                 v.Name,
-			"Value":                fmt.Sprintf("%f", v.Value),
-		}).Post("http://{serverAddressAndPort}/update/gauge/{Name}/{Value}")
+			SetRetryWaitTime(RetryMinWaitTimeSeconds*time.Second).
+			SetRetryMaxWaitTime(RetryMaxWaitTimeSeconds*time.Second).
+			R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(req).
+			SetPathParams(map[string]string{
+				"serverAddressAndPort": serverAddr,
+			}).Post("http://{serverAddressAndPort}/update/")
 		if err != nil {
 			fmt.Println("Error occurred while making request:", err)
 			panic(err)
@@ -47,11 +66,31 @@ func SendMetrics2() {
 		println("gauge ok")
 	}
 
-	_, err := client.R().SetPathParams(map[string]string{
-		"serverAddressAndPort": serverAddr,
-		"Name":                 "PollCount",
-		"Value":                strconv.FormatInt(memstats.PullCount+1, 10),
-	}).Post("http://{serverAddressAndPort}/update/counter/{Name}/{Value}")
+	delta := memstats.PullCount + 1
+	m := storage.Metrics{
+		ID:    "PollCount",
+		MType: "counter",
+		Delta: &delta,
+	}
+
+	req, rErr := json.Marshal(m)
+	if rErr != nil {
+		fmt.Println("Error occurred while making request:", rErr)
+		panic(rErr)
+	}
+
+	_, err := client.
+		SetRetryCount(RetryCount).
+		SetRetryWaitTime(RetryMinWaitTimeSeconds*time.Second).
+		SetRetryMaxWaitTime(RetryMaxWaitTimeSeconds*time.Second).
+		R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(req).
+		SetPathParams(map[string]string{
+			"serverAddressAndPort": serverAddr,
+			//"Name":                 "PollCount",
+			//"Value":                strconv.FormatInt(memstats.PullCount+1, 10),
+		}).Post("http://{serverAddressAndPort}/update/")
 
 	if err != nil {
 		panic(err)

@@ -1,18 +1,77 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/daniil174/gometrics/cmd/server/storage"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/daniil174/gometrics/internal/storage"
+	"github.com/go-chi/chi/v5"
 )
 
 var m = storage.NewMemStorage()
 
+func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
+	var metric storage.Metrics
+
+	jsDec := json.NewDecoder(r.Body)
+	if err := jsDec.Decode(&metric); err != nil {
+		http.Error(w, "Post request must have body", http.StatusInternalServerError)
+		return
+	}
+
+	body := fmt.Sprintf("metricType : %s\n metricName : %s\n ", metric.MType, metric.ID)
+
+	switch metric.MType {
+	case "gauge":
+		{
+			err := m.RewriteGauge(metric.ID, *metric.Value)
+			if err != nil {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
+					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
+				} else {
+					return
+				}
+			}
+			res, _ := m.GetGauge(metric.ID)
+			body += fmt.Sprintf("metricValue : %f\n", res)
+		}
+	case "counter":
+		{
+			err := m.AddCounter(metric.ID, *metric.Delta)
+			if err != nil {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
+					http.Error(w, "Metric counter did't exists", http.StatusNotFound)
+				} else {
+					return
+				}
+			}
+
+			res, _ := m.GetCounter(metric.ID)
+			body += fmt.Sprintf("metricValue : %d\n", res)
+		}
+	default:
+		{
+			http.Error(w, "Metric TYPE must be 'counter' or 'gauge'", http.StatusBadRequest)
+			return
+		}
+
+	}
+
+	// Content-Type: application/json
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write([]byte(body))
+	if err != nil {
+		return
+	}
+}
+
 func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
+
 	metricType := chi.URLParam(r, "type")
 	metricName := chi.URLParam(r, "name")
 
@@ -76,6 +135,74 @@ func UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+}
+
+func GetMetric2(w http.ResponseWriter, r *http.Request) {
+	var metric storage.Metrics
+
+	jsDec := json.NewDecoder(r.Body)
+	if err := jsDec.Decode(&metric); err != nil {
+		http.Error(w, "Post request must have body", http.StatusInternalServerError)
+		return
+	}
+
+	switch metric.MType {
+	case "gauge":
+		{
+			resp, err := m.GetGauge(metric.ID)
+			if err != nil {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
+					http.Error(w, "Metric did't exists", http.StatusNotFound)
+					return
+				} else {
+					return
+				}
+			}
+
+			respMetric := storage.Metrics{
+				ID:    metric.ID,
+				MType: metric.MType,
+				Value: &resp,
+			}
+			jsEnc := json.NewEncoder(w)
+			if err := jsEnc.Encode(respMetric); err != nil {
+				http.Error(w, "Metric value problem", http.StatusInternalServerError)
+			}
+		}
+	case "counter":
+		{
+			resp, err := m.GetCounter(metric.ID)
+			if err != nil {
+				if errors.Is(err, storage.ErrMetricDidntExist) {
+					http.Error(w, "Metric did't exists", http.StatusNotFound)
+					return
+				} else {
+					return
+				}
+			}
+
+			respMetric := storage.Metrics{
+				ID:    metric.ID,
+				MType: metric.MType,
+				Delta: &resp,
+			}
+			jsEnc := json.NewEncoder(w)
+			if err := jsEnc.Encode(respMetric); err != nil {
+				http.Error(w, "Metric value problem", http.StatusInternalServerError)
+				return
+			}
+		}
+	default:
+		{
+			http.Error(w, "Metric TYPE must be 'counter' or 'gauge'", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Content-Type: application/json
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 }
 
 func GetMetric(w http.ResponseWriter, r *http.Request) {
