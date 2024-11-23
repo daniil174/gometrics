@@ -1104,3 +1104,14 @@
 {"level":"info","timestamp":"2024-11-22T19:14:32.694+0500","msg":"uri /update/ method POST duration 36.958µs status 200 size 81"}
 {"level":"info","timestamp":"2024-11-22T19:14:32.694+0500","msg":"uri /update/ method POST duration 205.375µs status 200 size 90"}
 {"level":"info","timestamp":"2024-11-22T19:14:32.695+0500","msg":"uri /update/ method POST duration 151.709µs status 200 size 75"}
+{"level":"info","timestamp":"2024-11-22T19:25:03.272+0500","msg":"uri / method GET duration 302.834µs status 200 size 417"}
+{"level":"info","timestamp":"2024-11-22T19:25:04.286+0500","msg":"uri / method GET duration 518.375µs status 200 size 417"}
+{"level":"info","timestamp":"2024-11-22T19:25:05.157+0500","msg":"uri / method GET duration 579.125µs status 200 size 417"}
+{"level":"info","timestamp":"2024-11-22T19:25:15.032+0500","msg":"uri /update/counter/PollCount/12 method POST duration 441.25µs status 200 size 91"}
+{"level":"info","timestamp":"2024-11-22T19:25:17.537+0500","msg":"uri /update/counter/PollCount/12 method POST duration 956.75µs status 200 size 91"}
+{"level":"info","timestamp":"2024-11-22T19:25:27.258+0500","msg":"uri / method GET duration 287.75µs status 200 size 416"}
+{"level":"info","timestamp":"2024-11-22T19:25:28.419+0500","msg":"uri / method GET duration 523.792µs status 200 size 416"}
+{"level":"info","timestamp":"2024-11-22T19:31:58.832+0500","msg":"uri /update/counter/PollCount/12 method POST duration 178.709µs status 200 size 91"}
+{"level":"info","timestamp":"2024-11-22T19:33:47.747+0500","msg":"uri /update/counter/testCounter/100 method POST duration 252.458µs status 200 size 87"}
+{"level":"info","timestamp":"2024-11-22T19:33:48.757+0500","msg":"uri /update/counter/testCounter/100 method POST duration 924.334µs status 200 size 88"}
+{"level":"info","timestamp":"2024-11-22T19:34:20.652+0500","msg":"uri /update/counter/testCounter/100 method POST duration 360.417µs status 200 size 88"}
