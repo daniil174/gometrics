@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -29,10 +30,12 @@ func main() {
 	//defer stor.CloseFile()
 
 	if tmpCfg.Restore {
+		fmt.Printf("\n Try to read data from file %s\n", tmpCfg.FileStoragePath)
 		err := handlers.MemStrg.ReadFile(tmpCfg.FileStoragePath)
 		if err != nil {
 			servlogger.Sugar.Fatalw(err.Error(), "event", "on load metrics from file")
 		}
+
 	}
 
 	go func() {

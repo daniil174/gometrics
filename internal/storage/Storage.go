@@ -108,7 +108,7 @@ type Storage struct {
 
 // OpenFile открытие файла для хранения данных
 func (m *MemStorage) ReadFile(filename string) error {
-	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
