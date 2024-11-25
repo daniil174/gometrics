@@ -72,7 +72,7 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 // WriteHeader Для логирования кода статуса
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	// Записываем код статуса, используя оригинальный http.ResponseWriter
-	//r.ResponseWriter.WriteHeader(statusCode)
+	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode // захватываем код статуса
 }
 
