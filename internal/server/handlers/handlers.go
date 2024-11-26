@@ -183,10 +183,9 @@ func GetMetric2(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				if errors.Is(err, storage.ErrMetricDidntExist) {
 					http.Error(w, "Metric did't exists", http.StatusNotFound)
-					return
-				} else {
-					return
 				}
+				return
+
 			}
 
 			respMetric := storage.Metrics{
