@@ -1,45 +1,74 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"github.com/daniil174/gometrics/internal/server/compress"
+	"github.com/daniil174/gometrics/internal/server/handlers"
+	"github.com/daniil174/gometrics/internal/server/servconfig"
+	"github.com/daniil174/gometrics/internal/server/servlogger"
 	"net/http"
+	"time"
 
-	"github.com/caarlos0/env/v11"
-	"github.com/daniil174/gometrics/cmd/server/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
-type Config struct {
-	Addr string `env:"ADDRESS"`
-}
-
-var serverAddr string
-
-func ConfigFromEnv() error {
-	cfg, errConf := env.ParseAs[Config]()
-	if errConf != nil {
-		return errConf
-	}
-	fmt.Printf("ADDRESS=%s=", cfg.Addr)
-	serverAddr = cfg.Addr
-	if serverAddr == "" {
-		flag.StringVar(&serverAddr, "a", "localhost:8080", "server address and port, example 127.0.0.1:8080")
-		flag.Parse()
-	}
-	fmt.Printf("serverAddr=%s=", serverAddr)
-	return nil
-}
-
 func main() {
-	_ = ConfigFromEnv()
+
+	tmpCfg, _ := servconfig.SetConfig()
+	logger := servlogger.Sugar
+
 	r := chi.NewRouter()
+	r.Use(servlogger.AddLogging)
+	r.Use(compress.GzipHandleEncode)
+	r.Use(compress.GzipHandleDecode)
+
+	//mem := storage.NewMemStorage()
+	//stor := storage.New()
+	//stor.OpenFile(*tmpCfg)
+
+	//defer stor.CloseFile()
+
+	if tmpCfg.Restore {
+		fmt.Printf("\n Try to read data from file %s\n", tmpCfg.FileStoragePath)
+		err := handlers.MemStrg.ReadFile(tmpCfg.FileStoragePath)
+		if err != nil {
+			servlogger.Sugar.Fatalw(err.Error(), "event", "on load metrics from file")
+		}
+
+	}
+
+	interval := time.Duration(tmpCfg.StoreInterval) * time.Second
+	go func() {
+		for {
+			// if interval == 0 {
+			// 	interval = 100 * time.Microsecond // Установите разумное значение по умолчанию
+			// }
+			time.Sleep(interval)
+			err := handlers.MemStrg.SaveMetricsToFile(tmpCfg.FileStoragePath)
+			if err != nil {
+				servlogger.Sugar.Infow(err.Error(), "event", "on save metrics in file")
+			}
+			//log.Printf("event", "save metrics in file", interval)
+		}
+	}()
+
+	// Добавляем просмотр логов по запросу "http://serverAddr/logs"
+	// Временно убрал, из-за автотестов
+	// r.Get("/*", servlogger.Logs)
+
 	r.Get("/", handlers.MainPage)
+
 	r.Post("/update/{type}/{name}/{value}", handlers.UpdateMetrics)
 	r.Get("/value/{type}/{name}", handlers.GetMetric)
 
-	err := http.ListenAndServe(serverAddr, r)
+	// Роуты для JSON запросов
+	r.Post("/update/", handlers.UpdateMetrics2)
+	r.Post("/value/", handlers.GetMetric2)
+
+	err := http.ListenAndServe(tmpCfg.ServerAddress, r)
 	if err != nil {
-		panic(err)
+		//panic(err2)
+		logger.Fatalw(err.Error(), "event", "on start server")
 	}
+
 }

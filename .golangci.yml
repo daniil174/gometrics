@@ -245,7 +245,7 @@ linters-settings:
 
   loggercheck:
     loggercheck:
-    # Allow check for the github.com/go-kit/log library.
+    # Allow check for the github.com/go-kit/logs library.
     kitlog: true
     # Allow check for the k8s.io/klog/v2 library.
     klog: true
@@ -365,7 +365,7 @@ linters-settings:
     no-global: "all"
     # Enforce using methods that accept a context.
     context-only: true
-    # Enforce using static values for log messages.
+    # Enforce using static values for logs messages.
     static-msg: false
     # Enforce using constants instead of raw keys.
     no-raw-keys: false
