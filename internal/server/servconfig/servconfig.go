@@ -17,7 +17,7 @@ type Config struct {
 	DatabaseDsn     string `env:"DATABASE_DSN"`
 }
 
-// SetConfig устанавливает и получает конфигруацию из переменных или флагов
+// SetConfig устанавливает и получает конфигурацию из переменных или флагов
 func SetConfig() (*Config, error) {
 	// Set the environment variable names
 	var tmpCfg, flagCfg Config
@@ -42,7 +42,7 @@ func SetConfig() (*Config, error) {
 		"",
 		"database config string")
 	flag.Parse()
-	//fmt.Printf("Config after flags and default: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
+	// fmt.Printf("Config after flags and default: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
 	//	flagCfg.ServerAddress, flagCfg.FileStoragePath, flagCfg.StoreInterval, flagCfg.Restore)
 
 	if tmpCfg.ServerAddress == "" {

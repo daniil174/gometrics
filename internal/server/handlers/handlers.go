@@ -284,17 +284,17 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 }
 
 func DBhealthcheck(w http.ResponseWriter, _ *http.Request) {
-	if storage.PgDataBase == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	w.WriteHeader(http.StatusOK)
-
-	// try 2
-	//err := storage.PgDataBase.Ping()
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//if storage.PgDataBase == nil {
+	//	w.WriteHeader(http.StatusInternalServerError)
 	//}
 	//w.WriteHeader(http.StatusOK)
+
+	// try 2
+	err := storage.PgDataBase.Ping()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
 
 	// try 1
 	//if _, err := storage.PingDB(); err != nil {
