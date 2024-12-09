@@ -38,9 +38,9 @@ func SetConfig() (*Config, error) {
 	flag.BoolVar(&flagCfg.Restore, "r", true,
 		"choose to restore data or not, example false ")
 	flag.StringVar(&flagCfg.DatabaseDsn, "d",
-		"postgresql://localhost:5432/my_database?sslmode=disable",
-		//"",
-		"database config string, by default='postgresql://localhost:5432/my_database?sslmode=disable'")
+		//"postgresql://localhost:5432/my_database?sslmode=disable",
+		"",
+		"database config string")
 	flag.Parse()
 	//fmt.Printf("Config after flags and default: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
 	//	flagCfg.ServerAddress, flagCfg.FileStoragePath, flagCfg.StoreInterval, flagCfg.Restore)
