@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/daniil174/gometrics/internal/server/compress"
 	"github.com/daniil174/gometrics/internal/server/handlers"
 	"github.com/daniil174/gometrics/internal/server/servconfig"
 	"github.com/daniil174/gometrics/internal/server/servlogger"
-	"net/http"
-	"time"
+	"github.com/daniil174/gometrics/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -16,6 +18,9 @@ func main() {
 
 	tmpCfg, _ := servconfig.SetConfig()
 	logger := servlogger.Sugar
+
+	storage.StartDB(tmpCfg.DatabaseDsn)
+	defer storage.CloseDB()
 
 	r := chi.NewRouter()
 	r.Use(servlogger.AddLogging)
@@ -57,6 +62,7 @@ func main() {
 	// r.Get("/*", servlogger.Logs)
 
 	r.Get("/", handlers.MainPage)
+	r.Get("/ping", handlers.DBhealthcheck)
 
 	r.Post("/update/{type}/{name}/{value}", handlers.UpdateMetrics)
 	r.Get("/value/{type}/{name}", handlers.GetMetric)
