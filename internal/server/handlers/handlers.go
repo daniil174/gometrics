@@ -283,6 +283,21 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+func DBhealthcheck(w http.ResponseWriter, _ *http.Request) {
+	//w.Header().Set("content-type", "text/html")
+	err := storage.PgDataBase.Ping()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
+	//if _, err := storage.PingDB(); err != nil {
+	//	w.WriteHeader(http.StatusOK)
+	//	return
+	//}
+	//w.WriteHeader(http.StatusInternalServerError)
+
+}
+
 /* func Logs(w http.ResponseWriter, r *http.Request) {
 	// даем загружать только файлы из папки "logs"
 	workDir, _ := os.Getwd()

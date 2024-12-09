@@ -1,11 +1,17 @@
 package storage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
+
+	_ "github.com/lib/pq"
 )
+
+var PgDataBase *sql.DB
 
 var ErrMetricDidntExist = errors.New("metric didn't exist")
 
@@ -21,6 +27,33 @@ type Metrics struct {
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
+
+func StartDB(o string) error {
+	//connStr := "dbname=my_database sslmode=disable"
+
+	var err error
+	PgDataBase, err = sql.Open("postgres", o)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
+}
+
+func CloseDB() {
+	PgDataBase.Close()
+}
+
+//func PingDB() (bool, error) {
+//	// Проверяем соединение с базой данных
+//	err := PgDataBase.Ping()
+//	if err != nil {
+//		log.Fatal(err)
+//		return false, err
+//	}
+//	return true, nil
+//}
 
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
