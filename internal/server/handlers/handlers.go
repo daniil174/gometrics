@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-//var storage.MemStrg = storage.NewMemStorage()
+// var storage.MemStrg = storage.NewMemStorage()
 
 func UpdateMetrics2(w http.ResponseWriter, r *http.Request) {
 	var metric storage.Metrics
@@ -263,7 +263,7 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	var body = ""
 	for n, v := range storage.MemStrg.Counter {
-		body += fmt.Sprintf("<br> Metric name: %s = %d \n", n, v)
+		body += fmt.Sprintf("<br> metric.name: %s = %d \n", n, v)
 	}
 
 	// Sort Gauge metrics by name
@@ -274,7 +274,7 @@ func MainPage(w http.ResponseWriter, _ *http.Request) {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		body += fmt.Sprintf("<br> Metric name: %s = %s \n ", k, strconv.FormatFloat(storage.MemStrg.Gauge[k], 'f', -1, 64))
+		body += fmt.Sprintf("<br> metric.name: %s = %s \n ", k, strconv.FormatFloat(storage.MemStrg.Gauge[k], 'f', -1, 64))
 	}
 
 	_, err := w.Write([]byte(body))

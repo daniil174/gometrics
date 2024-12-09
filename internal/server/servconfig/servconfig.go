@@ -19,14 +19,13 @@ type Config struct {
 
 // SetConfig устанавливает и получает конфигурацию из переменных или флагов
 func SetConfig() (*Config, error) {
-	// Set the environment variable names
 	var tmpCfg, flagCfg Config
 	tmpCfg, err := env.ParseAs[Config]()
 	if err != nil {
 		return nil, err
 	}
 
-	//fmt.Printf("Config from ENV: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
+	// fmt.Printf("Config from ENV: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
 	//	tmpCfg.ServerAddress, tmpCfg.FileStoragePath, tmpCfg.StoreInterval, tmpCfg.Restore)
 
 	flag.StringVar(&flagCfg.ServerAddress, "a", "localhost:8080",
@@ -42,8 +41,6 @@ func SetConfig() (*Config, error) {
 		"",
 		"database config string")
 	flag.Parse()
-	// fmt.Printf("Config after flags and default: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
-	//	flagCfg.ServerAddress, flagCfg.FileStoragePath, flagCfg.StoreInterval, flagCfg.Restore)
 
 	if tmpCfg.ServerAddress == "" {
 		tmpCfg.ServerAddress = flagCfg.ServerAddress

@@ -109,7 +109,7 @@ func (m *MemStorageClass) SetMemType(t string) {
 
 func (m *MemStorageClass) AddCounter(name string, value int64) error {
 	// Временно убрал, потому что иначе не проходят автотесты
-	// if _, ok := m.Counter[name]; !ok {
+	// if _, ok := m.Counter[ID]; !ok {
 	//	return ErrMetricDidntExist
 	// }
 	m.Counter[name] += value
@@ -118,7 +118,7 @@ func (m *MemStorageClass) AddCounter(name string, value int64) error {
 
 func (m *MemStorageClass) RewriteGauge(name string, value float64) error {
 	// Временно убрал, потому что иначе не проходят автотесты
-	//if _, ok := m.Gauge[name]; !ok {
+	//if _, ok := m.Gauge[ID]; !ok {
 	//	return ErrMetricDidntExist
 	//}
 	m.Gauge[name] = value
@@ -154,6 +154,7 @@ type Storage struct {
 //}
 
 func (m *MemStorageClass) ReadMetricFromDB() error {
+	log.Printf("ReadMetricFromDB")
 	rows, err := PgDataBase.Query(`SELECT name, type, value, delta FROM metrics`)
 	if err != nil {
 
@@ -165,22 +166,40 @@ func (m *MemStorageClass) ReadMetricFromDB() error {
 		return fmt.Errorf("no metrics found")
 	}
 
+	log.Printf("ReadyToReadRows")
 	//readMetrics := make(map[string]Metrics)
+	//rows.RowsAffected()
+	log.Printf("RowsAffected = %d")
+	contRow := 1
 	for rows.Next() {
-		var m Metrics
-		err = rows.Scan(&m.ID, &m.MType, &m.Value, &m.Delta)
+		var metr Metrics
+		err = rows.Scan(&metr.ID, &metr.MType, &metr.Value, &metr.Delta)
 		if err != nil {
 			return fmt.Errorf("failed to scan metrics: %w", err)
 		}
-		if m.MType == "Counter" {
-			MemStrg.Counter[m.ID] = *m.Delta
-			log.Println("Db read Counters success")
+		log.Printf("id = %s, Type = %s", metr.ID, metr.MType)
+
+		if metr.MType == "Counter" {
+			log.Printf("id = %s, Type = %s, Delta = %d ", metr.ID, metr.MType, *metr.Delta)
+			log.Printf("Db try to read Counters for metric %s value = %d", metr.ID, *metr.Delta)
+			//if _, ok := MemStrg.Counter[m.ID]; ok {
+			//	MemStrg.Counter[m.ID] = *m.Delta
+			//}
+
+			MemStrg.AddCounter(metr.ID, *metr.Delta)
+			//MemStrg.Counter[m.ID] = *m.Delta
+			log.Printf("Db read Counters success for metric %s value = %d", metr.ID, *metr.Delta)
 		}
-		if m.MType == "Gauge" {
-			MemStrg.Gauge[m.ID] = *m.Value
-			log.Println("Db read Gauge success")
+		if metr.MType == "Gauge" {
+			//log.Printf("id = %s, Type = %s, Value =%f", m.ID, m.MType, *m.Value)
+			MemStrg.Gauge[metr.ID] = *metr.Value
+			//log.Printf("Db read Gauges success for metric %s value = %f", m.ID, *m.Value)
+			//log.Println("Db read Gauge success")
 		}
+
+		contRow++
 	}
+	log.Printf("Row count = %d", contRow)
 
 	if err = rows.Err(); err != nil {
 		return fmt.Errorf("failed to iterate over metrics: %w", err)
@@ -190,15 +209,17 @@ func (m *MemStorageClass) ReadMetricFromDB() error {
 }
 
 func (m *MemStorageClass) ResetDBandSetZeroValue() error {
+	log.Printf("ResetDBandSetZeroValue")
 	_, err := PgDataBase.Exec(`DROP TABLE metrics; 
 		CREATE TABLE IF NOT EXISTS metrics (
-		id SERIAL PRIMARY KEY,
+-- 		id SERIAL PRIMARY KEY,
 		type TEXT NOT NULL,
-		name TEXT NOT NULL,
+		name TEXT NOT NULL PRIMARY KEY,
 		value DOUBLE PRECISION,
 		delta BIGINT,
 		timestamp TIMESTAMP NOT NULL
-	)`)
+	);
+	CREATE UNIQUE INDEX metrics_name ON metrics (name);`)
 	if err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
@@ -227,21 +248,62 @@ func (m *MemStorageClass) ResetDBandSetZeroValue() error {
 	return nil
 }
 
+func isMetricExists(name string) bool {
+	var exists bool
+	err := PgDataBase.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM metrics WHERE name = $1)`,
+		name,
+	).Scan(&exists)
+	if err != nil {
+		log.Println("Failed to check if record exists:", err)
+	}
+	return exists
+}
+
 func (m *MemStorageClass) WriteMetricToDB() error {
 
 	//пишем все Counters
 	for n, v := range MemStrg.Counter {
+
 		_, err := PgDataBase.Exec(
-			`UPDATE metrics 
-		SET delta =$1,
-		    timestamp = $2
-		WHERE name = $3`,
-			v, time.Now(), n)
+			`INSERT INTO metrics (type, name, delta, timestamp)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (name) DO UPDATE
+        SET delta = $3,timestamp = $4`,
+			"Counter", n, v, time.Now())
+
 		if err != nil {
 			log.Println("Db faild to insert counters", err)
 			return fmt.Errorf("failed to insert counters metric: %w", err)
 		}
-		log.Println("Db save counters success")
+		log.Printf("Db save counters success metric=%s and Value =%d", n, v)
+
+		/*if isMetricExists(n) {
+					_, err := PgDataBase.Exec(
+						`UPDATE metrics
+				SET delta =$1,
+				    timestamp = $2
+				WHERE name = $3`,
+						v, time.Now(), n)
+					if err != nil {
+						log.Println("Db faild to insert counters", err)
+						return fmt.Errorf("failed to insert counters metric: %w", err)
+					}
+					log.Printf("Db save counters success metric=%s and Value =%d", n, v)
+
+				} else {
+					_, err := PgDataBase.Exec(
+						`INSERT INTO metrics (type, name, delta, timestamp)
+		        VALUES ($1, $2, $3, $4)`,
+						"Couter", n, v, time.Now())
+
+					if err != nil {
+						log.Println("Db faild to ADD counters", err)
+						return fmt.Errorf("failed to ADD counters metric: %w", err)
+					}
+					log.Println("Db ADD!!!! counters success")
+				}*/
+
 	}
 
 	//пишем все Gauge
@@ -256,7 +318,7 @@ func (m *MemStorageClass) WriteMetricToDB() error {
 			log.Println("Db faild to update Gauges", err)
 			return fmt.Errorf("failed to update Gauges metric: %w", err)
 		}
-		log.Println("Db update Gauges success")
+		//log.Println("Db update Gauges success")
 	}
 	return nil
 }
