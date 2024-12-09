@@ -169,7 +169,6 @@ func (m *MemStorageClass) ReadMetricFromDB() error {
 	log.Printf("ReadyToReadRows")
 	//readMetrics := make(map[string]Metrics)
 	//rows.RowsAffected()
-	log.Printf("RowsAffected = %d")
 	contRow := 1
 	for rows.Next() {
 		var metr Metrics
