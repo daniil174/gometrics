@@ -19,8 +19,7 @@ func main() {
 	tmpCfg, _ := servconfig.SetConfig()
 	logger := servlogger.Sugar
 
-	o := "host=localhost port=5432" + " dbname=my_database sslmode=disable"
-	storage.StartDB(o)
+	storage.StartDB(tmpCfg.DatabaseDsn)
 	defer storage.CloseDB()
 
 	r := chi.NewRouter()
