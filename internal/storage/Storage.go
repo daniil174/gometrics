@@ -209,7 +209,7 @@ func (m *MemStorageClass) ReadMetricFromDB() error {
 
 func (m *MemStorageClass) ResetDBandSetZeroValue() error {
 	log.Printf("ResetDBandSetZeroValue")
-	_, err := PgDataBase.Exec(`DROP TABLE metrics; 
+	_, err := PgDataBase.Exec(`-- DROP TABLE metrics; 
 		CREATE TABLE IF NOT EXISTS metrics (
 -- 		id SERIAL PRIMARY KEY,
 		type TEXT NOT NULL,
