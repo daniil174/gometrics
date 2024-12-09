@@ -7,15 +7,25 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
+
+const (
+	DB   = "db"
+	FILE = "file"
+	NONE = "none"
+)
+
+var MemStrg = NewMemStorage()
 
 var PgDataBase *sql.DB
 
 var ErrMetricDidntExist = errors.New("metric didn't exist")
 
-type MemStorage struct {
+type MemStorageClass struct {
+	MemType     string             `json:"-"`
 	FileStorage *os.File           `json:"-"`
 	Gauge       map[string]float64 `json:"gauge"`
 	Counter     map[string]int64   `json:"counter"`
@@ -55,8 +65,8 @@ func CloseDB() {
 //	return true, nil
 //}
 
-func NewMemStorage() *MemStorage {
-	return &MemStorage{
+func NewMemStorage() *MemStorageClass {
+	return &MemStorageClass{
 		Gauge: map[string]float64{
 			"Alloc":         0,
 			"BuckHashSys":   0,
@@ -93,7 +103,11 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-func (m *MemStorage) AddCounter(name string, value int64) error {
+func (m *MemStorageClass) SetMemType(t string) {
+	m.MemType = t
+}
+
+func (m *MemStorageClass) AddCounter(name string, value int64) error {
 	// Временно убрал, потому что иначе не проходят автотесты
 	// if _, ok := m.Counter[name]; !ok {
 	//	return ErrMetricDidntExist
@@ -102,7 +116,7 @@ func (m *MemStorage) AddCounter(name string, value int64) error {
 	return nil
 }
 
-func (m *MemStorage) RewriteGauge(name string, value float64) error {
+func (m *MemStorageClass) RewriteGauge(name string, value float64) error {
 	// Временно убрал, потому что иначе не проходят автотесты
 	//if _, ok := m.Gauge[name]; !ok {
 	//	return ErrMetricDidntExist
@@ -111,14 +125,14 @@ func (m *MemStorage) RewriteGauge(name string, value float64) error {
 	return nil
 }
 
-func (m *MemStorage) GetGauge(name string) (float64, error) {
+func (m *MemStorageClass) GetGauge(name string) (float64, error) {
 	if _, ok := m.Gauge[name]; !ok {
 		return 0, ErrMetricDidntExist
 	}
 	return m.Gauge[name], nil
 }
 
-func (m *MemStorage) GetCounter(name string) (int64, error) {
+func (m *MemStorageClass) GetCounter(name string) (int64, error) {
 	if _, ok := m.Counter[name]; !ok {
 		return 0, ErrMetricDidntExist
 	}
@@ -130,23 +144,131 @@ func (m *MemStorage) GetCounter(name string) (int64, error) {
 
 type Storage struct {
 	FileStorage *os.File
-	MemStorage  MemStorage
+	MemStorage  MemStorageClass
 }
 
 //func New() *Storage {
 //	return &Storage{
-//		MemStorage: *NewMemStorage(),
+//		MemStorageClass: *NewMemStorage(),
 //	}
 //}
 
+func (m *MemStorageClass) ReadMetricFromDB() error {
+	rows, err := PgDataBase.Query(`SELECT name, type, value, delta FROM metrics`)
+	if err != nil {
+
+		return fmt.Errorf("failed to select metrics: %w", err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return fmt.Errorf("no metrics found")
+	}
+
+	//readMetrics := make(map[string]Metrics)
+	for rows.Next() {
+		var m Metrics
+		err = rows.Scan(&m.ID, &m.MType, &m.Value, &m.Delta)
+		if err != nil {
+			return fmt.Errorf("failed to scan metrics: %w", err)
+		}
+		if m.MType == "Counter" {
+			MemStrg.Counter[m.ID] = *m.Delta
+			log.Println("Db read Counters success")
+		}
+		if m.MType == "Gauge" {
+			MemStrg.Gauge[m.ID] = *m.Value
+			log.Println("Db read Gauge success")
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return fmt.Errorf("failed to iterate over metrics: %w", err)
+	}
+
+	return nil
+}
+
+func (m *MemStorageClass) ResetDBandSetZeroValue() error {
+	_, err := PgDataBase.Exec(`DROP TABLE metrics; 
+		CREATE TABLE IF NOT EXISTS metrics (
+		id SERIAL PRIMARY KEY,
+		type TEXT NOT NULL,
+		name TEXT NOT NULL,
+		value DOUBLE PRECISION,
+		delta BIGINT,
+		timestamp TIMESTAMP NOT NULL
+	)`)
+	if err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
+
+	for n, v := range MemStrg.Counter {
+		_, err = PgDataBase.Exec(`INSERT INTO metrics (type, name,  delta, timestamp)
+		VALUES ($1, $2, $3, $4)`,
+			"Counter", n, v, time.Now())
+		if err != nil {
+			log.Println("Db faild to insert counters", err)
+			return fmt.Errorf("failed to insert counters metric: %w", err)
+		}
+		//log.Println("Db create Counters success")
+	}
+
+	for n, v := range MemStrg.Gauge {
+		_, err = PgDataBase.Exec(`INSERT INTO metrics (type, name, value, timestamp)
+		VALUES ($1, $2, $3, $4)`,
+			"Gauge", n, v, time.Now())
+		if err != nil {
+			log.Println("Db faild to insert Gauges", err)
+			return fmt.Errorf("failed to insert Gauges metric: %w", err)
+		}
+		//log.Println("Db create Gauge success")
+	}
+	return nil
+}
+
+func (m *MemStorageClass) WriteMetricToDB() error {
+
+	//пишем все Counters
+	for n, v := range MemStrg.Counter {
+		_, err := PgDataBase.Exec(
+			`UPDATE metrics 
+		SET delta =$1,
+		    timestamp = $2
+		WHERE name = $3`,
+			v, time.Now(), n)
+		if err != nil {
+			log.Println("Db faild to insert counters", err)
+			return fmt.Errorf("failed to insert counters metric: %w", err)
+		}
+		log.Println("Db save counters success")
+	}
+
+	//пишем все Gauge
+	for n, v := range MemStrg.Gauge {
+		_, err := PgDataBase.Exec(
+			`UPDATE metrics 
+		SET value =$1,
+		    timestamp = $2
+		WHERE name = $3`,
+			v, time.Now(), n)
+		if err != nil {
+			log.Println("Db faild to update Gauges", err)
+			return fmt.Errorf("failed to update Gauges metric: %w", err)
+		}
+		log.Println("Db update Gauges success")
+	}
+	return nil
+}
+
 // OpenFile открытие файла для хранения данных
-func (m *MemStorage) ReadFile(filename string) error {
+func (m *MemStorageClass) ReadFile(filename string) error {
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
 
-	//err = json.NewEncoder(file).Encode(s.MemStorage)
+	//err = json.NewEncoder(file).Encode(s.MemStorageClass)
 
 	err = json.NewDecoder(file).Decode(m)
 	if err != nil {
@@ -158,7 +280,7 @@ func (m *MemStorage) ReadFile(filename string) error {
 	return nil
 }
 
-func (m *MemStorage) SaveMetricsToFile(filename string) error {
+func (m *MemStorageClass) SaveMetricsToFile(filename string) error {
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
@@ -177,7 +299,7 @@ func (m *MemStorage) SaveMetricsToFile(filename string) error {
 	return nil
 }
 
-func (m *MemStorage) CloseFile() error {
+func (m *MemStorageClass) CloseFile() error {
 	return m.FileStorage.Close()
 }
 

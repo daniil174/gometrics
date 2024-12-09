@@ -7,7 +7,7 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-const DefaultStoreInterval = 2
+const DefaultStoreInterval = 10
 
 type Config struct {
 	ServerAddress   string `env:"ADDRESS"`
@@ -39,6 +39,7 @@ func SetConfig() (*Config, error) {
 		"choose to restore data or not, example false ")
 	flag.StringVar(&flagCfg.DatabaseDsn, "d",
 		"postgresql://localhost:5432/my_database?sslmode=disable",
+		//"",
 		"database config string, by default='postgresql://localhost:5432/my_database?sslmode=disable'")
 	flag.Parse()
 	//fmt.Printf("Config after flags and default: \n ADDRESS=%s \n FileStoragePath=%s \n StoreInterval=%d \n RESTORE=%t \n",
